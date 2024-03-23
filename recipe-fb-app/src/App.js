@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom'
 import { useTheme } from './hooks/useTheme'
-import { projectAuth } from './firebase/config'
+import { useAuthContext } from './hooks/useAuthContext'
+import ThemeSelector from './components/ThemeSelector'
 
 // page components
 import Navbar from './components/Navbar'
@@ -10,47 +10,27 @@ import Create from './pages/create/Create'
 import Search from './pages/search/Search'
 import Recipe from './pages/recipe/Recipe'
 import Login from './pages/login/Login'
-
-// styles
-import './App.css'
 import Signup from './pages/signup/Signup'
 import NotFound from './pages/notfound/NotFound'
 import Update from './pages/update/Update'
-import ThemeSelector from './components/ThemeSelector'
+
+// styles
+import './App.css'
+
 
 function App() {
   const { mode } = useTheme()
-  const [user, setUser] = useState(null);
-
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    projectAuth.onAuthStateChanged((authUser) => {
-      if (authUser) {
-        setUser(authUser);
-      } else {
-        setUser(null);
-      }
-    });
-  }, []);
-
-  const handleLogout = () => {
-    projectAuth.signOut().then(() => {
-      setUser(null);
-      navigate("/login");
-    });
-  };
+  const { authIsReady, user } = useAuthContext()
 
   return (
     <div className={`App ${mode}`}>
+      { authIsReady && (
+      <div>
         <Navbar 
-        user={user}
-        handleLogout={handleLogout}
         />
         <ThemeSelector />
         <Routes>
-          <Route exact 
-            path="/" 
+          <Route exact path="/" 
             element={<Home user={user} />}
           />
           <Route 
@@ -71,14 +51,16 @@ function App() {
           />
           <Route
             path="/login"
-            element={ user ? <Navigate to="/" /> : <Login setUser={setUser} />}
+            element={ user ? <Navigate to="/" /> : <Login />}
           />
           <Route
             path="/signup"
-            element={ user?.uid ? <Navigate to="/" /> : <Signup setUser={setUser} />}
+            element={ user && user.displayName ? <Navigate to="/" /> : <Signup />}
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
+      </div>
+      )}
     </div>
   );
 }

@@ -1,47 +1,18 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useLogin } from '../../hooks/useLogin'
 
 // styles
 import './Login.css'
-import { projectAuth } from '../../firebase/config';
 
-const initialState = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
-};
-
-export default function Login({ setActive, setUser }) {
-  const [state, setState] = useState(initialState);
-  const [error, setError] = useState(null)
-  const [isPending, setIsPending] = useState(false)
-  const { email, password } = state;
-
-  const navigate = useNavigate();
+export default function Login() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const { login, error, isPending } = useLogin()
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsPending(true);
-    try {
-      if (email && password) {
-        const { user } = await projectAuth.signInWithEmailAndPassword(email, password);
-        setUser(user);
-        //setActive("home");
-        navigate("/");
-      } else {
-        setError("All fields are mandatory to fill");
-      }
-    }catch(err) {
-      setError("The email or password is incorrect")
-    }
-    setIsPending(false);
+    e.preventDefault()
+    login(email, password)
   }
-
-  const handleChange = (e) => {
-    setState({ ...state, [e.target.name]: e.target.value });
-  };
 
   return (
     <form onSubmit={handleSubmit} className="auth-form">
@@ -51,8 +22,7 @@ export default function Login({ setActive, setUser }) {
         <input
           required
           type="email" 
-          name="email"
-          onChange={(e) => handleChange(e)} 
+          onChange={(e) => setEmail(e.target.value)} 
           value={email} 
         />
       </label>
@@ -60,9 +30,8 @@ export default function Login({ setActive, setUser }) {
         <span>password:</span>
         <input 
           required
-          type="password"
-          name="password" 
-          onChange={(e) => handleChange(e)} 
+          type="password" 
+          onChange={(e) => setPassword(e.target.value)} 
           value={password} 
         />
       </label>

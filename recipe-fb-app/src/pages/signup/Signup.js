@@ -1,63 +1,49 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom';
-import { collectionNames, projectAuth, projectFirestore } from '../../firebase/config';
+import { useSignup } from '../../hooks/useSignup'
 
 // styles
 import './Signup.css'
 
-const initialState = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
-};
+export default function Signup() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [thumbnail, setThumbnail] = useState(null)
+  const [thumbnailError, setThumbnailError] = useState(null)
+  const { signup, isPending, error } = useSignup()
 
-export default function Signup({ setActive, setUser }) {
-  const [state, setState] = useState(initialState);
-  const [error, setError] = useState(null)
-  const [isPending, setIsPending] = useState(false)
-  const { email, password, firstName, lastName, confirmPassword } = state;
-
-  const navigate = useNavigate();
-  
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsPending(true);
-    try {
-      if (password !== confirmPassword) {
-        setError("Password don't match");
-      }
-      else if (firstName && lastName && email && password) {
-        const res = await projectAuth.createUserWithEmailAndPassword(email, password);
-        if (!res) {
-          return setError('Could not complete signup');
-        }
-        const displayName = `${firstName} ${lastName}`;
-        await res.user.updateProfile({ displayName });
-        // create a user document
-        await projectFirestore.collection(collectionNames.users).doc(res.user.uid).set({ 
-          online: true,
-          displayName,
-          //photoURL: imgUrl,
-        })
-        //setActive("home");
-        navigate("/");
-      }
-      else {
-        setError("All fields are mandatory to fill");
-      }
-    }catch(err) {
-      console.log(err);
-      setError("Some error occurred")
-    }
-    setIsPending(false);
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const displayName = firstName + " " + lastName;
+    signup(email, password, confirmPassword, firstName, lastName, displayName, thumbnail)
   }
 
-  const handleChange = (e) => {
-    setState({ ...state, [e.target.name]: e.target.value });
-  };
+  const handleFileChange = (e) => {
+    setThumbnail(null)
+    let selected = e.target.files[0]
+    console.log(selected)
 
+    if (!selected) {
+      setThumbnailError('Please select a file')
+      return
+    }
+    if (!selected.type.includes('image')) {
+      setThumbnailError('Selected file must be an image')
+      return
+    }
+    if (selected.size > 100000) {
+      setThumbnailError('Image file size must be less than 100kb')
+      return
+    }
+    
+    setThumbnailError(null)
+    setThumbnail(selected)
+    console.log('thumbnail updated')
+  }
+
+  
   return (
     <form onSubmit={handleSubmit} className="auth-form">
       <h2>sign up</h2>
@@ -66,29 +52,8 @@ export default function Signup({ setActive, setUser }) {
         <input
           required 
           type="email" 
-          name="email" 
-          onChange={(e) => handleChange(e)} 
+          onChange={(e) => setEmail(e.target.value)} 
           value={email}
-        />
-      </label>
-      <label>
-        <span>First name:</span>
-        <input
-          required
-          type="text"
-          name="firstName" 
-          onChange={(e) => handleChange(e)} 
-          value={firstName}
-        />
-      </label>
-      <label>
-        <span>Last name:</span>
-        <input
-          required
-          type="text"
-          name="lastName" 
-          onChange={(e) => handleChange(e)} 
-          value={lastName}
         />
       </label>
       <label>
@@ -96,22 +61,46 @@ export default function Signup({ setActive, setUser }) {
         <input
           required
           type="password" 
-          name="password" 
-          onChange={(e) => handleChange(e)} 
+          onChange={(e) => setPassword(e.target.value)} 
           value={password}
         />
       </label>
       <label>
-        <span>confirmPassword:</span>
+        <span>confirm Password:</span>
         <input
           required
           type="password" 
-          name="confirmPassword" 
-          onChange={(e) => handleChange(e)} 
+          onChange={(e) => setConfirmPassword(e.target.value)} 
           value={confirmPassword}
         />
       </label>
-      {!isPending && <button className="btn">Sign Up</button>}
+      <label>
+        <span>First Name:</span>
+        <input
+          required
+          type="text" 
+          onChange={(e) => setFirstName(e.target.value)} 
+          value={firstName}
+        />
+      </label>
+      <label>
+        <span>Last Name:</span>
+        <input
+          required
+          type="text" 
+          onChange={(e) => setLastName(e.target.value)} 
+          value={lastName}
+        />
+      </label>
+      <label>
+        <span>Profile thumbnail:</span>
+        <input 
+          type="file"
+          onChange={handleFileChange}
+        />
+        {thumbnailError && <div className="error">{thumbnailError}</div>}
+      </label>
+      {!isPending && <button className="btn">Sign up</button>}
       {isPending && <button className="btn" disabled>loading</button>}
       {error && <div className="error">{error}</div>}
     </form>

@@ -1,12 +1,16 @@
 import { Link } from 'react-router-dom'
 import { useTheme } from '../hooks/useTheme'
+import { useLogout } from '../hooks/useLogout'
+import { useAuthContext } from '../hooks/useAuthContext'
 
 // styles
 import './Navbar.css'
 import Avatar from './Avatar'
 
-export default function Navbar ({ user, handleLogout }) {
+export default function Navbar () {
   const { color } = useTheme()
+  const { logout, isPending } = useLogout()
+  const { user } = useAuthContext()
 
   return (
     <div className="navbar" style={{ background: color }}>
@@ -23,8 +27,9 @@ export default function Navbar ({ user, handleLogout }) {
 
         {user && (
           <>
-            <Link className="customLink" to="/create">Create Recipe</Link>
-            <Link className="customLink" to="/" onClick={handleLogout}>Logout</Link>
+            {!isPending && <Link className="customLink" to="/create">Create Recipe</Link>}
+            {!isPending && <Link className="customLink" to="/" onClick={logout}>Logout</Link>}
+            {isPending && <Link className="customLink" to="/" disabled>Logging out...</Link>}
             <div style={{ marginLeft: "20px" }}>
               <Avatar src={'https://cdn-icons-png.flaticon.com/512/149/149071.png'} title={user.displayName} />
             </div>
